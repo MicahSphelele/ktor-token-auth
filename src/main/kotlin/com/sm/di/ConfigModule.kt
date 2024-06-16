@@ -13,4 +13,4 @@ val configModule =  module {
             secret = System.getenv("JWT_SECRET") ?: ""
         )
     }
-}
+}//System.currentTimeMillis() + 5 * 60 * 1000

@@ -14,7 +14,7 @@ import io.ktor.server.response.respond
 
 fun Application.configureSecurity(tokenConfig: TokenConfig) {
     authentication {
-        jwt(AuthType.JWT_AUTH.type) {
+        jwt(AuthType.JWT_AUTH_ACCESS_TOKEN.type) {
             realm = System.getenv("jwt.realm") ?: ""
             verifier(
                 JWT
@@ -36,7 +36,37 @@ fun Application.configureSecurity(tokenConfig: TokenConfig) {
                 call.respond(
                     HttpStatusCode.Unauthorized, message = APIResponse<String>(
                         HttpStatusCode.Unauthorized.value,
-                        message = "Token invalid or expired",
+                        message = "Access token invalid or has expired",
+                        success = false,
+                        response = null
+                    )
+                )
+            }
+        }
+
+        jwt(AuthType.JWT_AUTH_REFRESH_TOKEN.type) {
+            realm = System.getenv("jwt.realm") ?: ""
+            verifier(
+                JWT
+                    .require(Algorithm.HMAC256(tokenConfig.secret))
+                    .withAudience(tokenConfig.audience)
+                    .withIssuer(tokenConfig.issuer)
+                    .build()
+            )
+
+            validate { credential ->
+
+                if (credential.payload.audience.contains(tokenConfig.audience))
+                    JWTPrincipal(credential.payload)
+                else
+                    null
+            }
+
+            challenge { _, _ ->
+                call.respond(
+                    HttpStatusCode.Unauthorized, message = APIResponse<String>(
+                        HttpStatusCode.Unauthorized.value,
+                        message = "Refresh token invalid or has expired",
                         success = false,
                         response = null
                     )

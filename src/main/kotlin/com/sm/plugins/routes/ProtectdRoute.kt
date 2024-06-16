@@ -14,7 +14,7 @@ import io.ktor.server.routing.get
 
 fun Routing.protectedRouting() {
 
-    authenticate(AuthType.JWT_AUTH.type) {
+    authenticate(AuthType.JWT_AUTH_ACCESS_TOKEN.type) {
         get("/v1/user") {
 
             val principal = call.principal<JWTPrincipal>()

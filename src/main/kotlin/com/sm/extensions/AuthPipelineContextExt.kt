@@ -1,10 +1,7 @@
 package com.sm.extensions
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import com.sm.domain.interfaces.HashingService
 import com.sm.domain.interfaces.TokenService
-import com.sm.domain.models.request.RefreshRequest
 import com.sm.domain.models.request.SignInRequest
 import com.sm.domain.models.request.SignUpRequest
 import com.sm.domain.models.response.APIResponse
@@ -14,6 +11,7 @@ import com.sm.domain.models.token.TokenConfig
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.response.respond
 import io.ktor.util.pipeline.PipelineContext
 
@@ -83,16 +81,16 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
 
     val accessToken = tokenService.generate(
         config = tokenConfig,
-        TokenClaim("id", 1995.toString()),
-        TokenClaim("role", "admin"),
-        TokenClaim("email", email),
-        TokenClaim("tokenType", "accessToken")
+        TokenClaim(name = "id", value = 1995.toString()),
+        TokenClaim(name = "role", value = "admin"),
+        TokenClaim(name = "email", value = email),
+        TokenClaim(name = "tokenType", value = "accessToken")
     )
 
     val refreshToken = tokenService.generate(
         config = tokenConfig.copy(expiresIn = 24 * 60 * 60 * 1000),
-        TokenClaim("email", email),
-        TokenClaim("tokenType", "refreshToken")
+        TokenClaim(name = "email", value = email),
+        TokenClaim(name = "tokenType", value = "refreshToken")
     )
 
     call.respond(
@@ -109,16 +107,11 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
 }
 
 suspend fun PipelineContext<Unit, ApplicationCall>.refreshToken(
-    request: RefreshRequest,
     tokenService: TokenService,
     tokenConfig: TokenConfig,
+    principal: JWTPrincipal
 ) {
-
-    val decodedJWT = JWT.require(Algorithm.HMAC256(tokenConfig.secret))
-        .build()
-        .verify(request.refreshToken)
-
-    val tokenEmail = decodedJWT.getClaim("email").asString()
+    val tokenEmail = principal.userEmail
 
     val email = "sphemicah@gmail.com"
 
