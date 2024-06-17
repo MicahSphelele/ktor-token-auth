@@ -1,0 +1,1 @@
+web: ./build/install/com.sm.ktor-token-auth/bin/com.sm.ktor-token-auth

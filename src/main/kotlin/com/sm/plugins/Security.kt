@@ -5,6 +5,8 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.sm.domain.enums.AuthType
 import com.sm.domain.models.token.TokenConfig
 import com.sm.domain.models.response.APIResponse
+import com.sm.util.Constants
+import com.sm.util.Constants.JWT_REALM
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.auth.authentication
@@ -15,7 +17,7 @@ import io.ktor.server.response.respond
 fun Application.configureSecurity(tokenConfig: TokenConfig) {
     authentication {
         jwt(AuthType.JWT_AUTH_ACCESS_TOKEN.type) {
-            realm = System.getenv("jwt.realm") ?: ""
+            realm = JWT_REALM
             verifier(
                 JWT
                     .require(Algorithm.HMAC256(tokenConfig.secret))
@@ -45,7 +47,7 @@ fun Application.configureSecurity(tokenConfig: TokenConfig) {
         }
 
         jwt(AuthType.JWT_AUTH_REFRESH_TOKEN.type) {
-            realm = System.getenv("jwt.realm") ?: ""
+            realm = JWT_REALM
             verifier(
                 JWT
                     .require(Algorithm.HMAC256(tokenConfig.secret))

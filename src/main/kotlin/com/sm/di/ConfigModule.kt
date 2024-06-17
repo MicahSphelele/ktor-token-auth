@@ -1,16 +1,20 @@
 package com.sm.di
 
 import com.sm.domain.models.token.TokenConfig
+import com.sm.util.Constants
+import com.sm.util.Constants.JWT_AUDIENCE
+import com.sm.util.Constants.JWT_ISSUER
+import com.sm.util.Constants.JWT_SECRET
 import org.koin.dsl.module
 
 val configModule =  module {
 
     single {
         TokenConfig(
-            issuer = System.getenv("jwt.issuer") ?: "",
-            audience = System.getenv("jwt.audience") ?: "",
+            issuer = JWT_ISSUER,
+            audience = JWT_AUDIENCE,
+            secret = JWT_SECRET,
             expiresIn = 5 * 60 * 1000, //365L * 1000L * 60 * 60 * 24L for 1 year
-            secret = System.getenv("JWT_SECRET") ?: ""
         )
     }
-}//System.currentTimeMillis() + 5 * 60 * 1000
+}

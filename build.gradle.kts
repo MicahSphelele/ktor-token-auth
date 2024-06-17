@@ -8,18 +8,23 @@ val mongoDBVersion: String by project
 
 plugins {
     kotlin("jvm") version "2.0.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
     id("io.ktor.plugin") version "2.3.11"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
 
 group = "com.sm"
-version = "0.0.1"
+version = "1.0.0"
 
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
+}
+
+tasks {
+    create("stage").dependsOn("installDist")
 }
 
 repositories {
