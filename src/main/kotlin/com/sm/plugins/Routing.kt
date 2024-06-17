@@ -13,15 +13,7 @@ fun Application.configureRouting(tokenConfig: TokenConfig) {
 
     routing {
 
-        val hashingService by inject<HashingService>()
-        val tokenService by inject<TokenService>()
-
-        authRouting(
-            hashingService = hashingService,
-            tokenService = tokenService,
-            tokenConfig = tokenConfig
-        )
-
+        authRouting(tokenConfig = tokenConfig)
         protectedRouting()
     }
 }

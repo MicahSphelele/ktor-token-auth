@@ -23,12 +23,12 @@ import io.ktor.server.routing.post
 import org.koin.ktor.ext.inject
 
 fun Routing.authRouting(
-    hashingService: HashingService,
-    tokenService: TokenService,
     tokenConfig: TokenConfig
 ) {
 
     val authDatasource by inject<AuthDatasource>()
+    val hashingService by inject<HashingService>()
+    val tokenService by inject<TokenService>()
 
     post(path = "/v1/user/signup") {
 
@@ -64,7 +64,7 @@ fun Routing.authRouting(
         }
     }
 
-    post("/v1/user/signin") {
+    post(path = "/v1/user/signin") {
         try {
 
             val request = call.receiveNullable<SignInRequest>()
@@ -105,7 +105,7 @@ fun Routing.authRouting(
 
     authenticate(AuthType.JWT_AUTH_REFRESH_TOKEN.type) {
 
-        post("/v1/user/refresh-token") {
+        post(path = "/v1/user/refresh-token") {
 
             try {
 
@@ -115,7 +115,8 @@ fun Routing.authRouting(
                     refreshToken(
                         tokenService = tokenService,
                         tokenConfig = tokenConfig,
-                        principal = jwtPrincipal
+                        principal = jwtPrincipal,
+                        authDatasource = authDatasource
                     )
                 } ?: kotlin.run {
                     call.respond(

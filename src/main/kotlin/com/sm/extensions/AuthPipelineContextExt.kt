@@ -7,11 +7,12 @@ import com.sm.domain.interfaces.TokenService
 import com.sm.domain.models.request.SignInRequest
 import com.sm.domain.models.request.SignUpRequest
 import com.sm.domain.models.response.APIResponse
+import com.sm.domain.models.response.token.TokenResponse
 import com.sm.domain.models.token.SaltedHash
 import com.sm.domain.models.token.TokenClaim
 import com.sm.domain.models.token.TokenConfig
 import com.sm.extensions.user.toSignInResponse
-import com.sm.extensions.user.toUser
+import com.sm.extensions.user.toUserDTO
 import com.sm.extensions.user.toUserDocument
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -125,7 +126,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
                 code = HttpStatusCode.OK.value,
                 message = "Authentication success",
                 success = true,
-                response = user.toUser.toSignInResponse(
+                response = user.toUserDTO.toSignInResponse(
                     accessToken = accessToken,
                     refreshToken = refreshToken
                 )
@@ -148,49 +149,51 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
 suspend fun PipelineContext<Unit, ApplicationCall>.refreshToken(
     tokenService: TokenService,
     tokenConfig: TokenConfig,
-    principal: JWTPrincipal
+    principal: JWTPrincipal,
+    authDatasource: AuthDatasource
 ) {
-    val tokenEmail = principal.userEmail
 
-    val email = "sphemicah@gmail.com"
+    val email = principal.email
 
-    if (email != tokenEmail) {
+    val userDocument = authDatasource.getByEmail(email = email)
+
+    userDocument?.let { user ->
+
+        val accessToken = tokenService.generate(
+            config = tokenConfig,
+            TokenClaim(name = "id", value = user._id),
+            TokenClaim(name = "email", value = user.email),
+            TokenClaim(name = "tokenType", value = AuthType.JWT_AUTH_ACCESS_TOKEN.tokenType)
+        )
+
+        val refreshToken = tokenService.generate(
+            config = tokenConfig.copy(expiresIn = 24 * 60 * 60 * 1000),
+            TokenClaim("email", user.email),
+            TokenClaim(name = "tokenType", value = AuthType.JWT_AUTH_ACCESS_TOKEN.tokenType)
+        )
+
+        call.respond(
+            HttpStatusCode.OK,
+            message = APIResponse(
+                code = HttpStatusCode.OK.value,
+                message = "New tokens generated",
+                success = true,
+                response = TokenResponse(
+                    accessToken = accessToken,
+                    refreshToken = refreshToken
+                )
+            )
+        )
+
+    }?: kotlin.run {
         call.respond(
             HttpStatusCode.NotFound,
             message = APIResponse<String>(
                 code = HttpStatusCode.NotFound.value,
-                message = "Invalid email or password",
+                message = "Unable to retrieve user details",
                 success = false,
                 response = null
             )
         )
-        return
     }
-
-    val accessToken = tokenService.generate(
-        config = tokenConfig,
-        TokenClaim("id", 1995.toString()),
-        TokenClaim("role", "admin"),
-        TokenClaim("email", email),
-        TokenClaim("tokenType", "accessToken")
-    )
-
-    val refreshToken = tokenService.generate(
-        config = tokenConfig.copy(expiresIn = 24 * 60 * 60 * 1000),
-        TokenClaim("email", email),
-        TokenClaim("tokenType", "refreshToken")
-    )
-
-    call.respond(
-        HttpStatusCode.OK,
-        message = APIResponse(
-            code = HttpStatusCode.OK.value,
-            message = "New tokens generated",
-            success = true,
-            response = mapOf(
-                "accessToken" to accessToken,
-                "refreshToken" to refreshToken
-            )
-        )
-    )
 }

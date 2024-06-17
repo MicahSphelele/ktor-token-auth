@@ -3,7 +3,8 @@ package com.sm.extensions.user
 import com.sm.domain.models.db.UserDocument
 import com.sm.domain.models.request.SignUpRequest
 import com.sm.domain.models.response.signin.SignInResponse
-import com.sm.domain.models.user.User
+import com.sm.domain.models.response.token.TokenResponse
+import com.sm.domain.models.user.UserDTO
 
 fun SignUpRequest.toUserDocument(
     hashedPassword: String,
@@ -16,17 +17,16 @@ fun SignUpRequest.toUserDocument(
     salt = hashedSalt
 )
 
-val UserDocument.toUser
-    get(): User = User(
+val UserDocument.toUserDTO
+    get(): UserDTO = UserDTO(
         firstName = firstName,
         lastName = lastName,
         email = email
     )
 
 
-fun User.toSignInResponse(accessToken: String, refreshToken: String): SignInResponse =
+fun UserDTO.toSignInResponse(accessToken: String, refreshToken: String): SignInResponse =
     SignInResponse(
         user = this,
-        accessToken = accessToken,
-        refreshToken = refreshToken
+        tokens = TokenResponse(accessToken = accessToken, refreshToken = refreshToken),
     )
