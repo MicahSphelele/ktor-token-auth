@@ -1,5 +1,6 @@
 package com.sm.extensions
 
+import com.sm.domain.interfaces.AuthDatasource
 import com.sm.domain.interfaces.HashingService
 import com.sm.domain.interfaces.TokenService
 import com.sm.domain.models.request.SignInRequest
@@ -8,6 +9,7 @@ import com.sm.domain.models.response.APIResponse
 import com.sm.domain.models.token.SaltedHash
 import com.sm.domain.models.token.TokenClaim
 import com.sm.domain.models.token.TokenConfig
+import com.sm.extensions.user.toUserDocument
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -17,24 +19,55 @@ import io.ktor.util.pipeline.PipelineContext
 
 
 suspend fun PipelineContext<Unit, ApplicationCall>.signup(
+    request: SignUpRequest,
     hashingService: HashingService,
-    request: SignUpRequest
+    authDatasource: AuthDatasource
 ) {
 
-    val saltedHash = hashingService.generate(value = request.password)
+    val userDocument = authDatasource.getByEmail(email = request.email)
 
-    call.respond(
-        HttpStatusCode.Created,
-        message = APIResponse(
-            code = HttpStatusCode.Created.value,
-            message = "Account creation success",
-            success = true,
-            response = mapOf(
-                "hash" to saltedHash.hash,
-                "salt" to saltedHash.salt
+    userDocument?.let {
+        call.respond(
+            HttpStatusCode.Conflict,
+            message = APIResponse(
+                code = HttpStatusCode.Conflict.value,
+                message = "Email already in use",
+                success = false,
+                response = null
             )
         )
-    )
+    } ?: kotlin.run {
+
+        val saltedHash = hashingService.generate(value = request.password)
+
+        val userDocumentAdded = authDatasource.save(
+            request.toUserDocument(hashedPassword = saltedHash.hash, hashedSalt = saltedHash.salt)
+        )
+
+        if (userDocumentAdded.not()) {
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                message = APIResponse(
+                    code = HttpStatusCode.InternalServerError.value,
+                    developerMessage = "Database error occurred trying to save user details",
+                    message = "Unable to save your details",
+                    success = false,
+                    response = null
+                )
+            )
+            return
+        }
+
+        call.respond(
+            HttpStatusCode.InternalServerError,
+            message = APIResponse(
+                code = HttpStatusCode.InternalServerError.value,
+                message = "Your details have been successfully saved",
+                success = true,
+                response = null
+            )
+        )
+    }
 }
 
 suspend fun PipelineContext<Unit, ApplicationCall>.signin(

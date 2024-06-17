@@ -4,6 +4,7 @@ val logbackVersion: String by project
 val koinVersion: String by project
 val commonsCodecVersion: String by project
 val datetimeVersion: String by project
+val mongoDBVersion: String by project
 
 plugins {
     kotlin("jvm") version "2.0.0"
@@ -40,6 +41,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("commons-codec:commons-codec:$commonsCodecVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
+    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:$mongoDBVersion")
 
     implementation("io.insert-koin:koin-ktor:$koinVersion")
     implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")

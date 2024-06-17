@@ -3,8 +3,8 @@ package com.sm.plugins
 import com.sm.domain.interfaces.HashingService
 import com.sm.domain.interfaces.TokenService
 import com.sm.domain.models.token.TokenConfig
-import com.sm.plugins.routes.authRouting
-import com.sm.plugins.routes.protectedRouting
+import com.sm.routes.authRouting
+import com.sm.routes.protectedRouting
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject

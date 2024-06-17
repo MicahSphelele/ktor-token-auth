@@ -1,4 +1,4 @@
-package com.sm.plugins.routes
+package com.sm.routes
 
 import com.sm.domain.enums.AuthType
 import com.sm.domain.models.response.APIResponse

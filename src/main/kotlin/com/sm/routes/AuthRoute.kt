@@ -1,6 +1,7 @@
-package com.sm.plugins.routes
+package com.sm.routes
 
 import com.sm.domain.enums.AuthType
+import com.sm.domain.interfaces.AuthDatasource
 import com.sm.domain.interfaces.HashingService
 import com.sm.domain.interfaces.TokenService
 import com.sm.domain.models.request.SignInRequest
@@ -19,12 +20,15 @@ import io.ktor.server.request.receiveNullable
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
+import org.koin.ktor.ext.inject
 
 fun Routing.authRouting(
     hashingService: HashingService,
     tokenService: TokenService,
     tokenConfig: TokenConfig
 ) {
+
+    val authDatasource by inject<AuthDatasource>()
 
     post(path = "/v1/user/signup") {
 
@@ -34,7 +38,7 @@ fun Routing.authRouting(
 
             request?.let {
 
-                signup(request = it, hashingService = hashingService)
+                signup(request = it, hashingService = hashingService, authDatasource = authDatasource)
 
             } ?: kotlin.run {
                 call.respond(
