@@ -1,5 +1,6 @@
 package com.sm.extensions
 
+import com.sm.domain.enums.AuthType
 import com.sm.domain.interfaces.AuthDatasource
 import com.sm.domain.interfaces.HashingService
 import com.sm.domain.interfaces.TokenService
@@ -9,6 +10,8 @@ import com.sm.domain.models.response.APIResponse
 import com.sm.domain.models.token.SaltedHash
 import com.sm.domain.models.token.TokenClaim
 import com.sm.domain.models.token.TokenConfig
+import com.sm.extensions.user.toSignInResponse
+import com.sm.extensions.user.toUser
 import com.sm.extensions.user.toUserDocument
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -59,9 +62,9 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signup(
         }
 
         call.respond(
-            HttpStatusCode.InternalServerError,
+            HttpStatusCode.Created,
             message = APIResponse(
-                code = HttpStatusCode.InternalServerError.value,
+                code = HttpStatusCode.Created.value,
                 message = "Your details have been successfully saved",
                 success = true,
                 response = null
@@ -75,11 +78,61 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
     hashingService: HashingService,
     tokenService: TokenService,
     tokenConfig: TokenConfig,
+    authDatasource: AuthDatasource
 ) {
 
-    val email = "sphemicah@gmail.com"
+    val userDocument = authDatasource.getByEmail(email = request.email)
 
-    if (email != request.email) {
+    userDocument?.let { user ->
+
+        val isValidPassword = hashingService.verify(
+            request.password,
+            saltedHash = SaltedHash(
+                hash = user.password,
+                salt = user.salt
+            )
+        )
+
+        if (!isValidPassword) {
+            call.respond(
+                HttpStatusCode.NotFound,
+                message = APIResponse<String>(
+                    code = HttpStatusCode.NotFound.value,
+                    message = "Unable to authenticate please check email or password",
+                    success = false,
+                    response = null
+                )
+            )
+            return
+        }
+
+        val accessToken = tokenService.generate(
+            config = tokenConfig,
+            TokenClaim(name = "id", value = user._id),
+            TokenClaim(name = "email", value = user.email),
+            TokenClaim(name = "token_type", value = AuthType.JWT_AUTH_ACCESS_TOKEN.tokenType)
+        )
+
+        val refreshToken = tokenService.generate(
+            config = tokenConfig.copy(expiresIn = 24 * 60 * 60 * 1000),
+            TokenClaim(name = "email", value = user.email),
+            TokenClaim(name = "tokenType", value = AuthType.JWT_AUTH_REFRESH_TOKEN.tokenType)
+        )
+
+        call.respond(
+            HttpStatusCode.OK,
+            message = APIResponse(
+                code = HttpStatusCode.OK.value,
+                message = "Authentication success",
+                success = true,
+                response = user.toUser.toSignInResponse(
+                    accessToken = accessToken,
+                    refreshToken = refreshToken
+                )
+            )
+        )
+
+    } ?: kotlin.run {
         call.respond(
             HttpStatusCode.NotFound,
             message = APIResponse<String>(
@@ -89,54 +142,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
                 response = null
             )
         )
-        return
     }
-
-    val isValidPassword = hashingService.verify(
-        request.password,
-        saltedHash = SaltedHash(
-            hash = "81022c39f9c26411cf09222091941992e3427156ec831b5cc24b5bbc37eded8e",
-            salt = "ad2e5917d11f9ce8115ba52206dae665eda02a14f0b723946c9ec3aff5446ace")
-    )
-
-    if (!isValidPassword) {
-        call.respond(
-            HttpStatusCode.NotFound,
-            message = APIResponse<String>(
-                code = HttpStatusCode.NotFound.value,
-                message = "Invalid email or password",
-                success = false,
-                response = null
-            )
-        )
-        return
-    }
-
-    val accessToken = tokenService.generate(
-        config = tokenConfig,
-        TokenClaim(name = "id", value = 1995.toString()),
-        TokenClaim(name = "role", value = "admin"),
-        TokenClaim(name = "email", value = email),
-        TokenClaim(name = "tokenType", value = "accessToken")
-    )
-
-    val refreshToken = tokenService.generate(
-        config = tokenConfig.copy(expiresIn = 24 * 60 * 60 * 1000),
-        TokenClaim(name = "email", value = email),
-        TokenClaim(name = "tokenType", value = "refreshToken")
-    )
-
-    call.respond(
-        HttpStatusCode.OK,
-        message = APIResponse(
-            code = HttpStatusCode.OK.value,
-            message = "Authentication success",
-            success = true,
-            response = mapOf(
-                "accessToken" to accessToken,
-                "refreshToken" to refreshToken
-            )
-        ))
 }
 
 suspend fun PipelineContext<Unit, ApplicationCall>.refreshToken(
@@ -185,5 +191,6 @@ suspend fun PipelineContext<Unit, ApplicationCall>.refreshToken(
                 "accessToken" to accessToken,
                 "refreshToken" to refreshToken
             )
-        ))
+        )
+    )
 }

@@ -75,7 +75,8 @@ fun Routing.authRouting(
                     request = it,
                     hashingService = hashingService,
                     tokenService = tokenService,
-                    tokenConfig = tokenConfig
+                    tokenConfig = tokenConfig,
+                    authDatasource = authDatasource
                 )
 
             } ?: kotlin.run {
