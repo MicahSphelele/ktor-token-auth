@@ -55,6 +55,7 @@ fun Routing.authRouting(
             call.respond(
                 HttpStatusCode.BadRequest,
                 message = APIResponse<String>(
+                    developerMessage = e.message ?: "Unknown error",
                     code = HttpStatusCode.BadRequest.value,
                     message = HttpStatusCode.BadRequest.description,
                     success = false,
@@ -95,6 +96,7 @@ fun Routing.authRouting(
                 HttpStatusCode.BadRequest,
                 message = APIResponse<String>(
                     code = HttpStatusCode.BadRequest.value,
+                    developerMessage = e.message ?: "Unknown error",
                     message = HttpStatusCode.BadRequest.description,
                     success = false,
                     response = null
@@ -135,6 +137,7 @@ fun Routing.authRouting(
                     HttpStatusCode.BadRequest,
                     message = APIResponse<String>(
                         code = HttpStatusCode.BadRequest.value,
+                        developerMessage = e.message ?: "Unknown error",
                         message = HttpStatusCode.BadRequest.description,
                         success = false,
                         response = null
