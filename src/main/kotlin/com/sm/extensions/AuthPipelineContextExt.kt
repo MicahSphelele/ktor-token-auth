@@ -107,15 +107,17 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
             return
         }
 
+        val config = tokenConfig.copy(subject = user.fullName)
+
         val accessToken = tokenService.generate(
-            config = tokenConfig,
+            config = config,
             TokenClaim(name = "id", value = user._id),
             TokenClaim(name = "email", value = user.email),
             TokenClaim(name = "token_type", value = AuthType.JWT_AUTH_ACCESS_TOKEN.tokenType)
         )
 
         val refreshToken = tokenService.generate(
-            config = tokenConfig.copy(expiresIn = 24 * 60 * 60 * 1000),
+            config = config.copy(expiresIn = 24 * 60 * 60 * 1000),
             TokenClaim(name = "email", value = user.email),
             TokenClaim(name = "tokenType", value = AuthType.JWT_AUTH_REFRESH_TOKEN.tokenType)
         )
@@ -159,17 +161,19 @@ suspend fun PipelineContext<Unit, ApplicationCall>.refreshToken(
 
     userDocument?.let { user ->
 
+        val config = tokenConfig.copy(subject = user.fullName)
+
         val accessToken = tokenService.generate(
-            config = tokenConfig,
+            config = config,
             TokenClaim(name = "id", value = user._id),
             TokenClaim(name = "email", value = user.email),
             TokenClaim(name = "tokenType", value = AuthType.JWT_AUTH_ACCESS_TOKEN.tokenType)
         )
 
         val refreshToken = tokenService.generate(
-            config = tokenConfig.copy(expiresIn = 24 * 60 * 60 * 1000),
+            config = config.copy(expiresIn = 24 * 60 * 60 * 1000),
             TokenClaim("email", user.email),
-            TokenClaim(name = "tokenType", value = AuthType.JWT_AUTH_ACCESS_TOKEN.tokenType)
+            TokenClaim(name = "tokenType", value = AuthType.JWT_AUTH_REFRESH_TOKEN.tokenType)
         )
 
         call.respond(

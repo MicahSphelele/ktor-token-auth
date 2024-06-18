@@ -14,6 +14,8 @@ class JwtTokenService: TokenService {
         var token = JWT.create()
             .withAudience(config.audience)
             .withIssuer(config.issuer)
+            .withSubject(config.subject)
+            .withIssuedAt(Date(System.currentTimeMillis()))
             .withExpiresAt(Date(System.currentTimeMillis() + config.expiresIn))
 
         claims.forEach { claim ->

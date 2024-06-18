@@ -15,4 +15,7 @@ data class UserDocument(
     var password: String = "",
     var salt: String = "",
     var createDate: Long = System.currentTimeMillis(),
-)
+) {
+    val fullName: String
+        get() = "$firstName $lastName"
+}
