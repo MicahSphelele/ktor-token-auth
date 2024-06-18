@@ -45,7 +45,10 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signup(
         val saltedHash = hashingService.generate(value = request.password)
 
         val userDocumentAdded = authDatasource.save(
-            request.toUserDocument(hashedPassword = saltedHash.hash, hashedSalt = saltedHash.salt)
+            user = request.toUserDocument(
+                    hashedPassword = saltedHash.hash,
+                    hashedSalt = saltedHash.salt
+                )
         )
 
         if (userDocumentAdded.not()) {
@@ -87,7 +90,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
     userDocument?.let { user ->
 
         val isValidPassword = hashingService.verify(
-            request.password,
+            value = request.password,
             saltedHash = SaltedHash(
                 hash = user.password,
                 salt = user.salt
@@ -189,7 +192,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.refreshToken(
             )
         )
 
-    }?: kotlin.run {
+    } ?: kotlin.run {
         call.respond(
             HttpStatusCode.NotFound,
             message = APIResponse<String>(
