@@ -43,9 +43,9 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml")
     implementation("io.ktor:ktor-server-status-pages")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("commons-codec:commons-codec:$commonsCodecVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
     implementation("org.mongodb:mongodb-driver-kotlin-coroutine:$mongoDBVersion")
 
     implementation("io.insert-koin:koin-ktor:$koinVersion")
