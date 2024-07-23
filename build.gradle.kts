@@ -42,6 +42,7 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm")
     implementation("io.ktor:ktor-server-config-yaml")
     implementation("io.ktor:ktor-server-status-pages")
+    implementation("io.ktor:ktor-server-websockets-jvm")
 
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetimeVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
