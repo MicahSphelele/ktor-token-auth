@@ -3,7 +3,6 @@ package com.sm.routes
 import com.sm.domain.enums.SocketMessageType
 import com.sm.domain.models.signaling.SdpData
 import com.sm.domain.models.signaling.SocketMessage
-import com.sm.utils.AppUtils
 import com.sm.utils.AppUtils.getSocketMessageType
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.route
@@ -19,13 +18,13 @@ private val json = Json { ignoreUnknownKeys = true }
 
 fun Routing.webSocketRouting() {
 
-    route("/signaling-server/{email}") {
+    route("/signaling-server/{username}") {
 
         val connectedSockets = ConcurrentHashMap<String, WebSocketSession>()
 
         webSocket {
 
-            val username = call.parameters["email"] ?: "unknown@gmail.com"
+            val username = call.parameters["username"] ?: "unknown@mail.com"
 
             val socketSession = this
 
@@ -35,11 +34,13 @@ fun Routing.webSocketRouting() {
 
                 val introMessage = SocketMessage(
                     type = "intro",
-                    message = "You connected. There are ${connectedSockets.size} users here",
-                    data = connectedSockets.toList().map { it.first }.filter { it != username },
+                    message = "User connected: $username",
+                    data = connectedSockets.toList().map { it.first },
                 )
 
-                send(Frame.Text(text = json.encodeToString(introMessage)))
+                connectedSockets.forEach { socket ->
+                    socket.value.send(Frame.Text(text = json.encodeToString(introMessage)))
+                }
 
                 for (frame in incoming) {
 
@@ -149,17 +150,14 @@ fun Routing.webSocketRouting() {
 
                 connectedSockets.remove(username)
 
-                if (connectedSockets.isNotEmpty()) {
+                connectedSockets.forEach { socket ->
 
-                    connectedSockets.forEach { socket ->
-
-                        val closeMessage = SocketMessage(
-                            type = "close",
-                            message = "$username disconnected. There are ${connectedSockets.size} users here.",
-                            data = connectedSockets.toList().map { it.first }.filter { it != username },
-                        )
-                        socket.value.send(Frame.Text(json.encodeToString(closeMessage)))
-                    }
+                    val closeMessage = SocketMessage(
+                        type = "close",
+                        message = "User disconnected: $username",
+                        data = connectedSockets.toList().map { it.first },
+                    )
+                    socket.value.send(Frame.Text(json.encodeToString(closeMessage)))
                 }
             }
         }
