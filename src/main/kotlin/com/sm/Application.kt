@@ -13,6 +13,7 @@ fun main(args: Array<String>) {
 fun Application.module() {
     //Koin plugin configuration should always be initialized above other plugins
     configureKoin()
+    configureSockets()
     configureStatusPage()
     configureSerialization()
     configureMonitoring()
