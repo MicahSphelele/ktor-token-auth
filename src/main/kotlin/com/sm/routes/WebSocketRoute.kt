@@ -32,14 +32,14 @@ fun Routing.webSocketRouting() {
 
                 connectedSockets[username] = socketSession
 
-                val introMessage = SocketMessage(
-                    type = "intro",
-                    message = "User connected: $username",
+                val connectionMessage = SocketMessage(
+                    type = "client_connection",
+                    message = "$username connected",
                     data = connectedSockets.toList().map { it.first },
                 )
 
                 connectedSockets.forEach { socket ->
-                    socket.value.send(Frame.Text(text = json.encodeToString(introMessage)))
+                    socket.value.send(Frame.Text(text = json.encodeToString(connectionMessage)))
                 }
 
                 for (frame in incoming) {
@@ -153,8 +153,8 @@ fun Routing.webSocketRouting() {
                 connectedSockets.forEach { socket ->
 
                     val closeMessage = SocketMessage(
-                        type = "close",
-                        message = "User disconnected: $username",
+                        type = "client_disconnection",
+                        message = "$username disconnected",
                         data = connectedSockets.toList().map { it.first },
                     )
                     socket.value.send(Frame.Text(json.encodeToString(closeMessage)))

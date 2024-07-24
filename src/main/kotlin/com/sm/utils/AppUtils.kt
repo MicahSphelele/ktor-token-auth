@@ -13,3 +13,5 @@ object AppUtils {
         else -> SocketMessageType.UNKNOWN
     }
 }
+
+//{"type" : "create_offer", "name" :  "Micah", "target" : "Sphelele", "data": {"sdp" : "s0trtq22shsg"}}
