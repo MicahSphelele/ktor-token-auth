@@ -3,12 +3,13 @@ package com.sm.routes
 import com.sm.domain.enums.SocketMessageType
 import com.sm.domain.models.signaling.SdpData
 import com.sm.domain.models.signaling.SocketMessage
+import com.sm.domain.models.user.socket.User
+import com.sm.domain.models.user.socket.UserSocket
 import com.sm.utils.AppUtils.getSocketMessageType
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.route
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
-import io.ktor.websocket.WebSocketSession
 import io.ktor.websocket.readText
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -20,7 +21,8 @@ fun Routing.webSocketRouting() {
 
     route("/signaling-server/{username}") {
 
-        val connectedSockets = ConcurrentHashMap<String, WebSocketSession>()
+        val connectedUserSockets = ConcurrentHashMap<String, UserSocket>()
+        val connectedUsers = ConcurrentHashMap<String, User>()
 
         webSocket {
 
@@ -30,16 +32,27 @@ fun Routing.webSocketRouting() {
 
             try {
 
-                connectedSockets[username] = socketSession
+                connectedUserSockets[username] = UserSocket(username = username, isOnline = true, socket = socketSession)
+
+                //Update user online status
+                connectedUsers[username]?.let { user ->
+
+                    val updatedUser= user.copy(isOnline = true)
+                    connectedUsers[username] = updatedUser
+
+                } ?: kotlin.run {
+                    //Add new user online status
+                    connectedUsers[username] = User(username = username, isOnline = true)
+                }
 
                 val connectionMessage = SocketMessage(
                     type = "client_connection",
                     message = "$username connected",
-                    data = connectedSockets.toList().map { it.first },
+                    data = connectedUsers.toList().map { it.second },
                 )
 
-                connectedSockets.forEach { socket ->
-                    socket.value.send(Frame.Text(text = json.encodeToString(connectionMessage)))
+                connectedUserSockets.forEach { socket ->
+                    socket.value.socket.send(Frame.Text(text = json.encodeToString(connectionMessage)))
                 }
 
                 for (frame in incoming) {
@@ -53,9 +66,9 @@ fun Routing.webSocketRouting() {
 
                         SocketMessageType.START_CALL -> {
 
-                            val userToCall = connectedSockets[incomingData.target ?: ""]
+                            val socketToCall = connectedUserSockets[incomingData.target ?: ""]
 
-                            userToCall?.let {
+                            socketToCall?.let {
                                 val message = SocketMessage(
                                     type = "call_response",
                                     data = "user is ready for a call",
@@ -72,7 +85,7 @@ fun Routing.webSocketRouting() {
 
                         SocketMessageType.CREATE_OFFER -> {
 
-                            val userToReceiveOffer = connectedSockets[incomingData.target ?: ""]
+                            val socketToReceiveOffer = connectedUserSockets[incomingData.target ?: ""]
 
                             val message = SocketMessage(
                                 type = "offer_received",
@@ -80,12 +93,12 @@ fun Routing.webSocketRouting() {
                                 data = incomingData.data?.sdp,
                             )
 
-                            userToReceiveOffer?.send(Frame.Text(json.encodeToString(message)))
+                            socketToReceiveOffer?.socket?.send(Frame.Text(json.encodeToString(message)))
                         }
 
                         SocketMessageType.CREATE_ANSWER -> {
 
-                            val userToReceiveAnswer = connectedSockets[incomingData.target ?: ""]
+                            val socketToReceiveAnswer = connectedUserSockets[incomingData.target ?: ""]
 
                             val message = SocketMessage(
                                 type = "answer_received",
@@ -93,13 +106,12 @@ fun Routing.webSocketRouting() {
                                 data = incomingData.data?.sdp,
                             )
 
-                            userToReceiveAnswer?.send(Frame.Text(json.encodeToString(message)))
+                            socketToReceiveAnswer?.socket?.send(Frame.Text(json.encodeToString(message)))
                         }
 
                         SocketMessageType.ICE_CANDIDATE -> {
 
-                            val userToReceiveIceCandidate =
-                                connectedSockets[incomingData.target ?: ""]
+                            val socketToReceiveIceCandidate = connectedUserSockets[incomingData.target ?: ""]
 
                             val message = SocketMessage(
                                 type = "ice_candidate",
@@ -112,23 +124,29 @@ fun Routing.webSocketRouting() {
                                 ),
                             )
 
-                            userToReceiveIceCandidate?.send(Frame.Text(json.encodeToString(message)))
+                            socketToReceiveIceCandidate?.socket?.send(
+                                Frame.Text(
+                                    json.encodeToString(
+                                        message
+                                    )
+                                )
+                            )
                         }
 
                         else -> {
 
                             if (type.isRandom()) {
 
-                                if (connectedSockets.isNotEmpty()) {
+                                if (connectedUserSockets.isNotEmpty()) {
 
-                                    connectedSockets.forEach { socket ->
+                                    connectedUserSockets.forEach { user ->
 
                                         val closeMessage = SocketMessage<String>(
                                             type = "random",
                                             message = "$username says ${incomingData.message}",
                                         )
-                                        if (socket.key != username) {
-                                            socket.value.send(
+                                        if (user.key != username) {
+                                            user.value.socket.send(
                                                 Frame.Text(
                                                     json.encodeToString(
                                                         closeMessage
@@ -148,16 +166,25 @@ fun Routing.webSocketRouting() {
                 println("Error: ${e.localizedMessage}")
             } finally {
 
-                connectedSockets.remove(username)
+                //Update user online status
+                val connectedUser = connectedUsers[username]?.copy(isOnline = false)
 
-                connectedSockets.forEach { socket ->
+                connectedUser?.let { user ->
+                    connectedUsers[username] = user
+                }
+
+                //Remove socket completely to avoid memory leaks and connection issues
+                connectedUserSockets.remove(username)
+
+                //Send disconnection message to all connected users
+                connectedUserSockets.forEach { user ->
 
                     val closeMessage = SocketMessage(
                         type = "client_disconnection",
                         message = "$username disconnected",
-                        data = connectedSockets.toList().map { it.first },
+                        data = connectedUsers.toList().map { it.second },
                     )
-                    socket.value.send(Frame.Text(json.encodeToString(closeMessage)))
+                    user.value.socket.send(Frame.Text(json.encodeToString(closeMessage)))
                 }
             }
         }
