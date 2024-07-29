@@ -6,6 +6,8 @@ import com.sm.domain.models.signaling.SocketMessage
 import com.sm.domain.models.user.socket.User
 import com.sm.domain.models.user.socket.UserSocket
 import com.sm.utils.AppUtils.getSocketMessageType
+import io.ktor.server.application.Application
+import io.ktor.server.application.log
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.route
 import io.ktor.server.websocket.webSocket
@@ -17,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private val json = Json { ignoreUnknownKeys = true }
 
-fun Routing.webSocketRouting() {
+fun Routing.webSocketRouting(application: Application) {
 
     route("/signaling-server/{username}") {
 
@@ -32,12 +34,13 @@ fun Routing.webSocketRouting() {
 
             try {
 
-                connectedUserSockets[username] = UserSocket(username = username, isOnline = true, socket = socketSession)
+                connectedUserSockets[username] =
+                    UserSocket(username = username, isOnline = true, socket = socketSession)
 
                 //Update user online status
                 connectedUsers[username]?.let { user ->
 
-                    val updatedUser= user.copy(isOnline = true)
+                    val updatedUser = user.copy(isOnline = true)
                     connectedUsers[username] = updatedUser
 
                 } ?: kotlin.run {
@@ -65,55 +68,70 @@ fun Routing.webSocketRouting() {
                     when (val type = getSocketMessageType(incomingData.type)) {
 
                         SocketMessageType.START_CALL -> {
-
+                            application.log.info("SocketMessageType.START_CALL::$username")
                             val socketToCall = connectedUserSockets[incomingData.target ?: ""]
 
                             socketToCall?.let {
-                                val message = SocketMessage(
+                                val socketMessage = SocketMessage(
                                     type = "call_response",
                                     data = "user is ready for a call",
                                 )
-                                socketSession.send(Frame.Text(json.encodeToString(message)))
+                                socketSession.send(Frame.Text(json.encodeToString(socketMessage)))
                             } ?: kotlin.run {
-                                val message = SocketMessage(
+                                val socketMessage = SocketMessage(
                                     type = "call_response",
                                     data = "user is not online",
                                 )
-                                socketSession.send(Frame.Text(json.encodeToString(message)))
+                                socketSession.send(Frame.Text(json.encodeToString(socketMessage)))
                             }
                         }
 
                         SocketMessageType.CREATE_OFFER -> {
+                            application.log.info("SocketMessageType.CREATE_OFFER::$username")
+                            val socketToReceiveOffer =
+                                connectedUserSockets[incomingData.target ?: ""]
 
-                            val socketToReceiveOffer = connectedUserSockets[incomingData.target ?: ""]
-
-                            val message = SocketMessage(
+                            val socketMessage = SocketMessage(
                                 type = "offer_received",
                                 name = incomingData.name,
                                 data = incomingData.data?.sdp,
                             )
 
-                            socketToReceiveOffer?.socket?.send(Frame.Text(json.encodeToString(message)))
+                            socketToReceiveOffer?.socket?.send(
+                                Frame.Text(
+                                    json.encodeToString(
+                                        socketMessage
+                                    )
+                                )
+                            )
                         }
 
                         SocketMessageType.CREATE_ANSWER -> {
+                            application.log.info("SocketMessageType.CREATE_ANSWER::$username")
+                            val socketToReceiveAnswer =
+                                connectedUserSockets[incomingData.target ?: ""]
 
-                            val socketToReceiveAnswer = connectedUserSockets[incomingData.target ?: ""]
-
-                            val message = SocketMessage(
+                            val socketMessage = SocketMessage(
                                 type = "answer_received",
                                 name = incomingData.name,
                                 data = incomingData.data?.sdp,
                             )
 
-                            socketToReceiveAnswer?.socket?.send(Frame.Text(json.encodeToString(message)))
+                            socketToReceiveAnswer?.socket?.send(
+                                Frame.Text(
+                                    json.encodeToString(
+                                        socketMessage
+                                    )
+                                )
+                            )
                         }
 
                         SocketMessageType.ICE_CANDIDATE -> {
+                            application.log.info("SocketMessageType.ICE_CANDIDATE::$username")
+                            val socketToReceiveIceCandidate =
+                                connectedUserSockets[incomingData.target ?: ""]
 
-                            val socketToReceiveIceCandidate = connectedUserSockets[incomingData.target ?: ""]
-
-                            val message = SocketMessage(
+                            val socketMessage = SocketMessage(
                                 type = "ice_candidate",
                                 name = incomingData.name,
                                 data = SdpData(
@@ -127,7 +145,7 @@ fun Routing.webSocketRouting() {
                             socketToReceiveIceCandidate?.socket?.send(
                                 Frame.Text(
                                     json.encodeToString(
-                                        message
+                                        socketMessage
                                     )
                                 )
                             )
@@ -162,8 +180,7 @@ fun Routing.webSocketRouting() {
                 }
 
             } catch (e: Exception) {
-                e.printStackTrace()
-                println("Error: ${e.localizedMessage}")
+                application.log.error("Error: ${e.localizedMessage}", e)
             } finally {
 
                 //Update user online status

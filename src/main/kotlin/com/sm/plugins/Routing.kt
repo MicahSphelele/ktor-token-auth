@@ -14,6 +14,6 @@ fun Application.configureRouting(tokenConfig: TokenConfig) {
         authRouting(tokenConfig = tokenConfig)
         protectedRouting()
         unprotectedRouting()
-        webSocketRouting()
+        webSocketRouting(application = application)
     }
 }
