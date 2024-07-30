@@ -67,8 +67,8 @@ fun Routing.webSocketRouting(application: Application) {
 
                     when (val type = getSocketMessageType(incomingData.type)) {
 
-                        SocketMessageType.START_CALL -> {
-                            application.log.info("SocketMessageType.START_CALL::$username")
+                        SocketMessageType.StartCall -> {
+                            application.log.info("SocketMessageType.StartCall::$username")
                             val socketToCall = connectedUserSockets[incomingData.target ?: ""]
 
                             socketToCall?.let {
@@ -86,8 +86,8 @@ fun Routing.webSocketRouting(application: Application) {
                             }
                         }
 
-                        SocketMessageType.CREATE_OFFER -> {
-                            application.log.info("SocketMessageType.CREATE_OFFER::$username")
+                        SocketMessageType.CreateOffer -> {
+                            application.log.info("SocketMessageType.CreateOffer::$username")
                             val socketToReceiveOffer =
                                 connectedUserSockets[incomingData.target ?: ""]
 
@@ -106,8 +106,8 @@ fun Routing.webSocketRouting(application: Application) {
                             )
                         }
 
-                        SocketMessageType.CREATE_ANSWER -> {
-                            application.log.info("SocketMessageType.CREATE_ANSWER::$username")
+                        SocketMessageType.CreateAnswer -> {
+                            application.log.info("SocketMessageType.CreateAnswer::$username")
                             val socketToReceiveAnswer =
                                 connectedUserSockets[incomingData.target ?: ""]
 
@@ -126,8 +126,28 @@ fun Routing.webSocketRouting(application: Application) {
                             )
                         }
 
-                        SocketMessageType.ICE_CANDIDATE -> {
-                            application.log.info("SocketMessageType.ICE_CANDIDATE::$username")
+                        SocketMessageType.CreateDecline -> {
+                            application.log.info("SocketMessageType.CreateDecline::$username")
+                            val socketToReceiveDecline =
+                                connectedUserSockets[incomingData.target ?: ""]
+
+                            val socketMessage = SocketMessage(
+                                type = "decline_received",
+                                name = incomingData.name,
+                                data = null
+                            )
+
+                            socketToReceiveDecline?.socket?.send(
+                                Frame.Text(
+                                    json.encodeToString(
+                                        socketMessage
+                                    )
+                                )
+                            )
+                        }
+
+                        SocketMessageType.IceCandidate -> {
+                            application.log.info("SocketMessageType.IceCandidate::$username")
                             val socketToReceiveIceCandidate =
                                 connectedUserSockets[incomingData.target ?: ""]
 

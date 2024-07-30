@@ -5,11 +5,11 @@ import com.sm.domain.enums.SocketMessageType
 object AppUtils {
 
     fun getSocketMessageType(type: String): SocketMessageType = when(type) {
-        "start_call" -> SocketMessageType.START_CALL
-        "create_offer" -> SocketMessageType.CREATE_OFFER
-        "create_answer" -> SocketMessageType.CREATE_ANSWER
-        "ice_candidate" -> SocketMessageType.ICE_CANDIDATE
-        "random" -> SocketMessageType.RANDOM
-        else -> SocketMessageType.UNKNOWN
+        "start_call" -> SocketMessageType.StartCall
+        "create_offer" -> SocketMessageType.CreateOffer
+        "create_answer" -> SocketMessageType.CreateAnswer
+        "ice_candidate" -> SocketMessageType.IceCandidate
+        "random" -> SocketMessageType.Random
+        else -> SocketMessageType.Unknown
     }
 }

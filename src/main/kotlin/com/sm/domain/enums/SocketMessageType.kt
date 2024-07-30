@@ -2,20 +2,21 @@ package com.sm.domain.enums
 
 enum class SocketMessageType(val type: String) {
 
-    START_CALL(type = "start_call"),
-    CREATE_OFFER(type ="create_offer"),
-    CREATE_ANSWER(type ="create_answer"),
-    ICE_CANDIDATE(type ="ice_candidate"),
-    RANDOM(type = "random"),
-    UNKNOWN(type = "unknown");
+    StartCall(type = "start_call"),
+    CreateOffer(type ="create_offer"),
+    CreateAnswer(type ="create_answer"),
+    CreateDecline(type ="create_decline"),
+    IceCandidate(type ="ice_candidate"),
+    Random(type = "random"),
+    Unknown(type = "unknown");
 
-    fun isStartCall(): Boolean = this == START_CALL
+    fun isStartCall(): Boolean = this == StartCall
 
-    fun isCreateOffer(): Boolean = this == CREATE_OFFER
+    fun isCreateOffer(): Boolean = this == CreateOffer
 
-    fun isCreateAnswer(): Boolean = this == CREATE_ANSWER
+    fun isCreateAnswer(): Boolean = this == CreateAnswer
 
-    fun isIceCandidate(): Boolean = this == ICE_CANDIDATE
+    fun isIceCandidate(): Boolean = this == IceCandidate
 
-    fun isRandom(): Boolean = this == RANDOM
+    fun isRandom(): Boolean = this == Random
 }
