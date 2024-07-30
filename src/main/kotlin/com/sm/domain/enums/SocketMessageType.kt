@@ -11,6 +11,8 @@ enum class SocketMessageType(val type: String) {
     CreateDecline(type ="create_decline"),
     DeclineReceived(type = "decline_received"),
     IceCandidate(type ="ice_candidate"),
+    ClientConnection(type = "client_connection"),
+    ClientDisconnection(type = "client_disconnection"),
     Random(type = "random"),
     Unknown(type = "unknown");
 

@@ -35,7 +35,7 @@ fun Routing.webSocketRouting(application: Application) {
             try {
 
                 connectedUserSockets[username] =
-                    UserSocket(username = username, isOnline = true, socket = socketSession)
+                    UserSocket(username = username, socket = socketSession)
 
                 //Update user online status
                 connectedUsers[username]?.let { user ->
@@ -49,7 +49,7 @@ fun Routing.webSocketRouting(application: Application) {
                 }
 
                 val connectionMessage = SocketMessage(
-                    type = "client_connection",
+                    type = SocketMessageType.ClientConnection.type,
                     message = "$username connected",
                     data = connectedUsers.toList().map { it.second },
                 )
@@ -74,13 +74,15 @@ fun Routing.webSocketRouting(application: Application) {
                             socketToCall?.let {
                                 val socketMessage = SocketMessage(
                                     type = SocketMessageType.CallResponse.type,
-                                    data = "user is ready for a call",
+                                    message = "user is ready",
+                                    data = null,
                                 )
                                 socketSession.send(Frame.Text(json.encodeToString(socketMessage)))
                             } ?: kotlin.run {
                                 val socketMessage = SocketMessage(
                                     type = SocketMessageType.CallResponse.type,
-                                    data = "user is not online",
+                                    message = "user is not ready",
+                                    data = null,
                                 )
                                 socketSession.send(Frame.Text(json.encodeToString(socketMessage)))
                             }
@@ -217,7 +219,7 @@ fun Routing.webSocketRouting(application: Application) {
                 connectedUserSockets.forEach { user ->
 
                     val closeMessage = SocketMessage(
-                        type = "client_disconnection",
+                        type = SocketMessageType.ClientDisconnection.type,
                         message = "$username disconnected",
                         data = connectedUsers.toList().map { it.second },
                     )

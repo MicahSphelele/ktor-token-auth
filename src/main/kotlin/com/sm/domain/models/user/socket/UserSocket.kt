@@ -4,6 +4,5 @@ import io.ktor.websocket.WebSocketSession
 
 data class UserSocket(
     val username: String,
-    val isOnline: Boolean,
     val socket: WebSocketSession,
 )
