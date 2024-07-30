@@ -68,18 +68,18 @@ fun Routing.webSocketRouting(application: Application) {
                     when (val type = getSocketMessageType(incomingData.type)) {
 
                         SocketMessageType.StartCall -> {
-                            application.log.info("SocketMessageType.StartCall::$username")
+                            application.log.info("SocketMessageType.StartCall::$username - ${incomingData.target}")
                             val socketToCall = connectedUserSockets[incomingData.target ?: ""]
 
                             socketToCall?.let {
                                 val socketMessage = SocketMessage(
-                                    type = "call_response",
+                                    type = SocketMessageType.CallResponse.type,
                                     data = "user is ready for a call",
                                 )
                                 socketSession.send(Frame.Text(json.encodeToString(socketMessage)))
                             } ?: kotlin.run {
                                 val socketMessage = SocketMessage(
-                                    type = "call_response",
+                                    type = SocketMessageType.CallResponse.type,
                                     data = "user is not online",
                                 )
                                 socketSession.send(Frame.Text(json.encodeToString(socketMessage)))
@@ -87,12 +87,12 @@ fun Routing.webSocketRouting(application: Application) {
                         }
 
                         SocketMessageType.CreateOffer -> {
-                            application.log.info("SocketMessageType.CreateOffer::$username")
+                            application.log.info("SocketMessageType.CreateOffer::$username - ${incomingData.target}")
                             val socketToReceiveOffer =
                                 connectedUserSockets[incomingData.target ?: ""]
 
                             val socketMessage = SocketMessage(
-                                type = "offer_received",
+                                type = SocketMessageType.OfferReceived.type,
                                 name = incomingData.name,
                                 data = incomingData.data?.sdp,
                             )
@@ -107,12 +107,12 @@ fun Routing.webSocketRouting(application: Application) {
                         }
 
                         SocketMessageType.CreateAnswer -> {
-                            application.log.info("SocketMessageType.CreateAnswer::$username")
+                            application.log.info("SocketMessageType.CreateAnswer::$username - ${incomingData.target}")
                             val socketToReceiveAnswer =
                                 connectedUserSockets[incomingData.target ?: ""]
 
                             val socketMessage = SocketMessage(
-                                type = "answer_received",
+                                type = SocketMessageType.AnswerReceived.type,
                                 name = incomingData.name,
                                 data = incomingData.data?.sdp,
                             )
@@ -127,12 +127,12 @@ fun Routing.webSocketRouting(application: Application) {
                         }
 
                         SocketMessageType.CreateDecline -> {
-                            application.log.info("SocketMessageType.CreateDecline::$username")
+                            application.log.info("SocketMessageType.CreateDecline::$username - ${incomingData.target}")
                             val socketToReceiveDecline =
                                 connectedUserSockets[incomingData.target ?: ""]
 
                             val socketMessage = SocketMessage(
-                                type = "decline_received",
+                                type = SocketMessageType.DeclineReceived.type,
                                 name = incomingData.name,
                                 data = null
                             )
@@ -147,12 +147,12 @@ fun Routing.webSocketRouting(application: Application) {
                         }
 
                         SocketMessageType.IceCandidate -> {
-                            application.log.info("SocketMessageType.IceCandidate::$username")
+                            application.log.info("SocketMessageType.IceCandidate::$username - ${incomingData.target}")
                             val socketToReceiveIceCandidate =
                                 connectedUserSockets[incomingData.target ?: ""]
 
                             val socketMessage = SocketMessage(
-                                type = "ice_candidate",
+                                type = SocketMessageType.IceCandidate.type,
                                 name = incomingData.name,
                                 data = SdpData(
                                     sdp = incomingData.data?.sdp,

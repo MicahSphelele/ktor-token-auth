@@ -6,9 +6,14 @@ object AppUtils {
 
     fun getSocketMessageType(type: String): SocketMessageType = when(type) {
         "start_call" -> SocketMessageType.StartCall
+        "call_response" -> SocketMessageType.CallResponse
         "create_offer" -> SocketMessageType.CreateOffer
+        "offer_received" -> SocketMessageType.OfferReceived
         "create_answer" -> SocketMessageType.CreateAnswer
+        "answer_received" -> SocketMessageType.AnswerReceived
         "ice_candidate" -> SocketMessageType.IceCandidate
+        "create_decline" -> SocketMessageType.CreateDecline
+        "decline_received" -> SocketMessageType.DeclineReceived
         "random" -> SocketMessageType.Random
         else -> SocketMessageType.Unknown
     }
