@@ -14,6 +14,8 @@ object AppUtils {
         "ice_candidate" -> SocketMessageType.IceCandidate
         "create_decline" -> SocketMessageType.CreateDecline
         "decline_received" -> SocketMessageType.DeclineReceived
+        "create_end_call" -> SocketMessageType.CreateEndCall
+        "end_call_received" -> SocketMessageType.EndCallReceived
         "random" -> SocketMessageType.Random
         else -> SocketMessageType.Unknown
     }

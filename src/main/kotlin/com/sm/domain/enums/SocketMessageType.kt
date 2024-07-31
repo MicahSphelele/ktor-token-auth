@@ -10,6 +10,8 @@ enum class SocketMessageType(val type: String) {
     AnswerReceived(type = "answer_received"),
     CreateDecline(type ="create_decline"),
     DeclineReceived(type = "decline_received"),
+    CreateEndCall(type ="create_end_call"),
+    EndCallReceived(type = "end_call_received"),
     IceCandidate(type ="ice_candidate"),
     ClientConnection(type = "client_connection"),
     ClientDisconnection(type = "client_disconnection"),

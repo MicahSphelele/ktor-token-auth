@@ -4,8 +4,8 @@ import com.sm.domain.models.token.TokenConfig
 import com.sm.routes.authRouting
 import com.sm.routes.protectedRouting
 import com.sm.routes.unprotectedRouting
-import com.sm.routes.webSocketRouting
-import com.sm.routes.webSocketRoutingIO
+import com.sm.routes.sockets.webSocketRouting
+import com.sm.routes.sockets.webSocketRoutingIO
 import io.ktor.server.application.Application
 import io.ktor.server.routing.routing
 

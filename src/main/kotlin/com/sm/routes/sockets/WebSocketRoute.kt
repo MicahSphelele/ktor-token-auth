@@ -1,4 +1,4 @@
-package com.sm.routes
+package com.sm.routes.sockets
 
 import com.sm.domain.enums.SocketMessageType
 import com.sm.domain.models.signaling.SdpData
@@ -6,7 +6,6 @@ import com.sm.domain.models.signaling.SocketMessage
 import com.sm.domain.models.user.socket.User
 import com.sm.domain.models.user.socket.UserSocket
 import com.sm.utils.AppUtils.getSocketMessageType
-import com.sm.utils.SessionManager
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import io.ktor.server.routing.Routing
@@ -14,10 +13,8 @@ import io.ktor.server.routing.route
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -93,7 +90,7 @@ fun Routing.webSocketRouting(application: Application) {
 
                         SocketMessageType.CreateOffer -> {
                             application.log.info("SocketMessageType.CreateOffer::$username - ${incomingData.target}")
-                            val socketToReceiveOffer =
+                            val targetSocket =
                                 connectedUserSockets[incomingData.target ?: ""]
 
                             val socketMessage = SocketMessage(
@@ -102,7 +99,7 @@ fun Routing.webSocketRouting(application: Application) {
                                 data = incomingData.data?.sdp,
                             )
 
-                            socketToReceiveOffer?.socket?.send(
+                            targetSocket?.socket?.send(
                                 Frame.Text(
                                     json.encodeToString(
                                         socketMessage
@@ -113,7 +110,7 @@ fun Routing.webSocketRouting(application: Application) {
 
                         SocketMessageType.CreateAnswer -> {
                             application.log.info("SocketMessageType.CreateAnswer::$username - ${incomingData.target}")
-                            val socketToReceiveAnswer =
+                            val targetSocket =
                                 connectedUserSockets[incomingData.target ?: ""]
 
                             val socketMessage = SocketMessage(
@@ -122,7 +119,7 @@ fun Routing.webSocketRouting(application: Application) {
                                 data = incomingData.data?.sdp,
                             )
 
-                            socketToReceiveAnswer?.socket?.send(
+                            targetSocket?.socket?.send(
                                 Frame.Text(
                                     json.encodeToString(
                                         socketMessage
@@ -133,23 +130,44 @@ fun Routing.webSocketRouting(application: Application) {
 
                         SocketMessageType.CreateDecline -> {
                             application.log.info("SocketMessageType.CreateDecline::$username - ${incomingData.target}")
-                            val socketToReceiveDecline =
+                            val targetSocket =
                                 connectedUserSockets[incomingData.target ?: ""]
 
                             val socketMessage = SocketMessage(
                                 type = SocketMessageType.DeclineReceived.type,
                                 name = incomingData.name,
+                                message = "Call declined by ${incomingData.name}",
                                 data = null
                             )
 
-                            socketToReceiveDecline?.socket?.send(
+                            targetSocket?.socket?.send(
+                                Frame.Text(json.encodeToString(socketMessage))
+                            )
+                        }
+
+                        SocketMessageType.CreateEndCall -> {
+
+                            application.log.info("SocketMessageType.CreateEndCall::$username - ${incomingData.target}")
+
+                            val targetSocket =
+                                connectedUserSockets[incomingData.target ?: ""]
+
+                            val socketMessage = SocketMessage(
+                                type = SocketMessageType.EndCallReceived.type,
+                                name = incomingData.name,
+                                message = "Call ended by ${incomingData.name}",
+                                data = null
+                            )
+
+                            targetSocket?.socket?.send(
                                 Frame.Text(json.encodeToString(socketMessage))
                             )
                         }
 
                         SocketMessageType.IceCandidate -> {
                             application.log.info("SocketMessageType.IceCandidate::$username - ${incomingData.target}")
-                            val socketToReceiveIceCandidate =
+
+                            val targetSocket =
                                 connectedUserSockets[incomingData.target ?: ""]
 
                             val socketMessage = SocketMessage(
@@ -163,7 +181,7 @@ fun Routing.webSocketRouting(application: Application) {
                                 ),
                             )
 
-                            socketToReceiveIceCandidate?.socket?.send(
+                            targetSocket?.socket?.send(
                                 Frame.Text(
                                     json.encodeToString(
                                         socketMessage
@@ -226,41 +244,5 @@ fun Routing.webSocketRouting(application: Application) {
                 }
             }
         }
-    }
-}
-
-fun Routing.webSocketRoutingIO(application: Application) {
-    route("/rtc") {
-
-        webSocket {
-
-            val sessionID = UUID.randomUUID()
-
-            try {
-
-                SessionManager.onSessionStarted(sessionId = sessionID, session = this)
-
-                for (frame in incoming) {
-                    when (frame) {
-                        is Frame.Text -> {
-                            SessionManager.onMessage(sessionID, frame.readText())
-                        }
-
-                        else -> Unit
-                    }
-                }
-                application.log.info("Exiting incoming loop, closing session: $sessionID")
-                SessionManager.onSessionClose(sessionID)
-            } catch (e: ClosedReceiveChannelException) {
-                SessionManager.onSessionClose(sessionID)
-                application.log.error("onClose $sessionID")
-            } catch (e: Throwable) {
-                SessionManager.onSessionClose(sessionID)
-                application.log.error("onError $sessionID", e)
-            }
-        }
-
-
-
     }
 }
