@@ -122,7 +122,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.signin(
         val refreshToken = tokenService.generate(
             config = config.copy(expiresIn = 24 * 60 * 60 * 1000),
             TokenClaim(name = "email", value = user.email),
-            TokenClaim(name = "tokenType", value = AuthType.JWT_AUTH_REFRESH_TOKEN.tokenType)
+            TokenClaim(name = "token_type", value = AuthType.JWT_AUTH_REFRESH_TOKEN.tokenType)
         )
 
         call.respond(
